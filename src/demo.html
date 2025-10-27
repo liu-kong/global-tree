@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Global Tree - 知识图谱演示</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 20px 40px;
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .header h1 {
+      color: #262626;
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    
+    .header p {
+      color: #8c8c8c;
+      font-size: 16px;
+    }
+    
+    .main-content {
+      flex: 1;
+      display: flex;
+      padding: 40px;
+      gap: 40px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    
+    .demo-cards {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+    
+    .demo-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    
+    .demo-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+      border-color: #1890ff;
+    }
+    
+    .demo-card.active {
+      border-color: #1890ff;
+      background: rgba(24, 144, 255, 0.05);
+    }
+    
+    .demo-icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #1890ff, #40a9ff);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 28px;
+      color: white;
+    }
+    
+    .demo-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #262626;
+      margin-bottom: 8px;
+    }
+    
+    .demo-description {
+      color: #8c8c8c;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    
+    .demo-features {
+      list-style: none;
+    }
+    
+    .demo-features li {
+      color: #595959;
+      font-size: 14px;
+      margin-bottom: 4px;
+      padding-left: 16px;
+      position: relative;
+    }
+    
+    .demo-features li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #52c41a;
+      font-weight: bold;
+    }
+    
+    .info-panel {
+      width: 350px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      height: fit-content;
+    }
+    
+    .info-panel h3 {
+      color: #262626;
+      font-size: 18px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .architecture-info {
+      margin-bottom: 24px;
+    }
+    
+    .architecture-item {
+      margin-bottom: 12px;
+    }
+    
+    .architecture-label {
+      font-weight: 600;
+      color: #262626;
+      margin-bottom: 4px;
+    }
+    
+    .architecture-value {
+      color: #8c8c8c;
+      font-size: 14px;
+    }
+    
+    .tech-stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    
+    .tech-tag {
+      background: #f0f0f0;
+      color: #595959;
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .launch-button {
+      width: 100%;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #1890ff, #40a9ff);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 24px;
+    }
+    
+    .launch-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(24, 144, 255, 0.3);
+    }
+    
+    .launch-button:disabled {
+      background: #d9d9d9;
+      color: #8c8c8c;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #52c41a;
+      margin-right: 8px;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(82, 196, 26, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(82, 196, 26, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(82, 196, 26, 0);
+      }
+    }
+    
+    .footer {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 20px 40px;
+      text-align: center;
+      color: #8c8c8c;
+      box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .demo-preview {
+      margin-top: 16px;
+      padding: 16px;
+      background: #fafafa;
+      border-radius: 8px;
+      border: 1px solid #e8e8e8;
+    }
+    
+    .preview-image {
+      width: 100%;
+      height: 120px;
+      background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0),
+                  linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0);
+      background-size: 20px 20px;
+      background-position: 0 0, 10px 10px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #8c8c8c;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🌳 Global Tree</h1>
+    <p>专业且自由的知识图谱系统 - 集成 D3.js、AntV X6 和 AntV G6</p>
+  </div>
+  
+  <div class="main-content">
+    <div class="demo-cards">
+      <div class="demo-card" data-demo="knowledge-graph">
+        <div class="demo-icon">🧠</div>
+        <div class="demo-title">知识图谱编辑器</div>
+        <div class="demo-description">
+          基于 AntV X6 的专业知识图谱编辑器，支持实体、概念、属性等多种节点类型，以及丰富的关系连接。
+        </div>
+        <ul class="demo-features">
+          <li>自定义节点类型</li>
+          <li>智能连接算法</li>
+          <li>拖拽式编辑</li>
+          <li>实时预览</li>
+        </ul>
+        <div class="demo-preview">
+          <div class="preview-image">知识图谱预览</div>
+        </div>
+      </div>
+      
+      <div class="demo-card" data-demo="flowchart">
+        <div class="demo-icon">📊</div>
+        <div class="demo-title">流程图设计器</div>
+        <div class="demo-description">
+          强大的流程图设计工具，支持各种流程节点、决策节点，以及智能的连接线布局算法。
+        </div>
+        <ul class="demo-features">
+          <li>丰富的流程节点</li>
+          <li>智能布局</li>
+          <li>快捷键支持</li>
+          <li>导出多种格式</li>
+        </ul>
+        <div class="demo-preview">
+          <div class="preview-image">流程图预览</div>
+        </div>
+      </div>
+      
+      <div class="demo-card" data-demo="mindmap">
+        <div class="demo-icon">🎯</div>
+        <div class="demo-title">思维导图工具</div>
+        <div class="demo-description">
+          直观的思维导图编辑器，支持层级结构、主题样式，以及自动布局算法。
+        </div>
+        <ul class="demo-features">
+          <li>层级结构管理</li>
+          <li>主题样式</li>
+          <li>自动布局</li>
+          <li>折叠展开</li>
+        </ul>
+        <div class="demo-preview">
+          <div class="preview-image">思维导图预览</div>
+        </div>
+      </div>
+      
+      <div class="demo-card" data-demo="graph-analysis">
+        <div class="demo-icon">🔍</div>
+        <div class="demo-title">图分析可视化</div>
+        <div class="demo-description">
+          基于 AntV G6 的图分析工具，支持复杂网络分析、社区发现、路径分析等高级功能。
+        </div>
+        <ul class="demo-features">
+          <li>复杂网络分析</li>
+          <li>社区发现算法</li>
+          <li>路径分析</li>
+          <li>力导向布局</li>
+        </ul>
+        <div class="demo-preview">
+          <div class="preview-image">图分析预览</div>
+        </div>
+      </div>
+      
+      <div class="demo-card" data-demo="custom-viz">
+        <div class="demo-icon">🎨</div>
+        <div class="demo-title">自定义可视化</div>
+        <div class="demo-description">
+          基于 D3.js 的自定义可视化工具，支持各种创意图表和交互式数据展示。
+        </div>
+        <ul class="demo-features">
+          <li>自定义图表</li>
+          <li>交互动画</li>
+          <li>数据绑定</li>
+          <li>主题定制</li>
+        </ul>
+        <div class="demo-preview">
+          <div class="preview-image">自定义可视化预览</div>
+        </div>
+      </div>
+      
+      <div class="demo-card" data-demo="plugin-system">
+        <div class="demo-icon">🔧</div>
+        <div class="demo-title">插件系统演示</div>
+        <div class="demo-description">
+          展示强大的插件系统，支持动态加载、热插拔、以及丰富的扩展能力。
+        </div>
+        <ul class="demo-features">
+          <li>动态插件加载</li>
+          <li>热插拔支持</li>
+          <li>API 扩展</li>
+          <li>配置管理</li>
+        </ul>
+        <div class="demo-preview">
+          <div class="preview-image">插件系统预览</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="info-panel">
+      <h3><span class="status-indicator"></span>系统状态</h3>
+      
+      <div class="architecture-info">
+        <div class="architecture-item">
+          <div class="architecture-label">架构版本</div>
+          <div class="architecture-value">v1.0.0</div>
+        </div>
+        <div class="architecture-item">
+          <div class="architecture-label">核心引擎</div>
+          <div class="architecture-value">模块化插件架构</div>
+        </div>
+        <div class="architecture-item">
+          <div class="architecture-label">渲染器</div>
+          <div class="architecture-value">AntV X6 / G6 / D3.js</div>
+        </div>
+        <div class="architecture-item">
+          <div class="architecture-label">当前选择</div>
+          <div class="architecture-value" id="current-demo">请选择一个演示</div>
+        </div>
+      </div>
+      
+      <h3>技术栈</h3>
+      <div class="tech-stack">
+        <span class="tech-tag">Vue 3</span>
+        <span class="tech-tag">TypeScript</span>
+        <span class="tech-tag">Vite</span>
+        <span class="tech-tag">AntV X6</span>
+        <span class="tech-tag">AntV G6</span>
+        <span class="tech-tag">D3.js</span>
+        <span class="tech-tag">Pinia</span>
+        <span class="tech-tag">Element Plus</span>
+      </div>
+      
+      <h3>核心特性</h3>
+      <ul class="demo-features">
+        <li>插件化架构</li>
+        <li>多图形库支持</li>
+        <li>类型安全</li>
+        <li>性能优化</li>
+        <li>热重载</li>
+        <li>响应式设计</li>
+      </ul>
+      
+      <button class="launch-button" id="launch-demo" disabled>
+        启动演示
+      </button>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <p>© 2024 Global Tree - 专业知识图谱系统 | 基于 MIT 协议开源</p>
+  </div>
+  
+  <script>
+    let selectedDemo = null;
+    
+    // 演示卡片点击事件
+    document.querySelectorAll('.demo-card').forEach(card => {
+      card.addEventListener('click', function() {
+        // 移除其他卡片的激活状态
+        document.querySelectorAll('.demo-card').forEach(c => c.classList.remove('active'));
+        
+        // 激活当前卡片
+        this.classList.add('active');
+        
+        // 更新选择状态
+        selectedDemo = this.dataset.demo;
+        document.getElementById('current-demo').textContent = this.querySelector('.demo-title').textContent;
+        
+        // 启用启动按钮
+        const launchButton = document.getElementById('launch-demo');
+        launchButton.disabled = false;
+        launchButton.textContent = '启动 ' + this.querySelector('.demo-title').textContent;
+      });
+    });
+    
+    // 启动演示
+    document.getElementById('launch-demo').addEventListener('click', function() {
+      if (!selectedDemo) return;
+      
+      // 模拟启动过程
+      this.textContent = '正在启动...';
+      this.disabled = true;
+      
+      setTimeout(() => {
+        // 根据选择的演示打开相应的页面
+        const demoUrls = {
+          'knowledge-graph': '/examples/knowledge-graph/',
+          'flowchart': '/examples/flowchart/',
+          'mindmap': '/examples/mindmap/',
+          'graph-analysis': '/examples/graph-analysis/',
+          'custom-viz': '/examples/custom-viz/',
+          'plugin-system': '/examples/plugin-system/'
+        };
+        
+        const url = demoUrls[selectedDemo] || '/demo.html';
+        
+        // 创建新窗口打开演示
+        const demoWindow = window.open(url, '_blank', 'width=1200,height=800');
+        
+        if (demoWindow) {
+          demoWindow.focus();
+        } else {
+          // 如果弹窗被阻止，则在当前页面打开
+          window.location.href = url;
+        }
+        
+        // 恢复按钮状态
+        this.textContent = '启动演示';
+        this.disabled = false;
+      }, 1000);
+    });
+    
+    // 添加键盘快捷键支持
+    document.addEventListener('keydown', function(e) {
+      // 数字键 1-6 快速选择演示
+      if (e.key >= '1' && e.key <= '6') {
+        const index = parseInt(e.key) - 1;
+        const cards = document.querySelectorAll('.demo-card');
+        if (cards[index]) {
+          cards[index].click();
+        }
+      }
+      
+      // Enter 键启动演示
+      if (e.key === 'Enter' && selectedDemo && !document.getElementById('launch-demo').disabled) {
+        document.getElementById('launch-demo').click();
+      }
+    });
+    
+    // 页面加载完成后的初始化
+    window.addEventListener('load', function() {
+      console.log('Global Tree 演示系统已加载');
+      console.log('按数字键 1-6 快速选择演示，按 Enter 键启动');
+    });
+  </script>
+</body>
+</html>
