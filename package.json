@@ -1,7 +1,7 @@
 {
   "name": "global-tree",
   "version": "1.0.0",
-  "description": "A professional and free knowledge graph editor platform",
+  "description": "AI-powered personal knowledge garden - Grow your knowledge like a tree with skill trees, AI fusion, and gamified learning",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -27,6 +27,7 @@
     "echarts": "^5.4.0",
     "insert-css": "^2.0.0",
     "lodash-es": "^4.17.21",
+    "lucide-vue-next": "^0.563.0",
     "pinia": "^2.1.0",
     "vue": "^3.4.0",
     "vue-router": "4"

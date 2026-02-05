@@ -1,29 +1,42 @@
 <template>
-  <div id="app" :class="{ 'dark-theme': isDarkTheme }">
-    <router-view />
+  <div id="app">
+    <div v-if="loading" class="loading-screen">
+      <div class="loading-content">
+        <div class="spinner"></div>
+        <p>加载知识树...</p>
+      </div>
+    </div>
+    <router-view v-else />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { useConfigStore } from '@/stores/config'
+import { ref, onMounted } from 'vue'
+import { useTreeStore, useNutrientStore } from './stores'
+import { initIndexedDB } from './utils/storage'
 
-const configStore = useConfigStore()
-
-// 计算是否为深色主题
-const isDarkTheme = computed(() => configStore.graphConfig.theme === 'dark')
+const treeStore = useTreeStore()
+const nutrientStore = useNutrientStore()
+const loading = ref(true)
 
 // 初始化应用
-onMounted(() => {
-  // 应用主题
-  configStore.applyTheme()
-  
-  // 监听系统主题变化
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-  mediaQuery.addEventListener('change', (e) => {
-    // 可以根据系统主题自动切换
-    // configStore.setTheme(e.matches ? 'dark' : 'light')
-  })
+onMounted(async () => {
+  try {
+    // 1. 初始化 IndexedDB
+    await initIndexedDB()
+
+    // 2. 加载知识树
+    await treeStore.loadTree()
+
+    // 3. 加载养料
+    await nutrientStore.loadNutrients()
+
+    // 4. 显示应用
+    loading.value = false
+  } catch (error) {
+    console.error('Failed to initialize app:', error)
+    alert('应用初始化失败，请刷新页面重试')
+  }
 })
 </script>
 
@@ -36,13 +49,6 @@ onMounted(() => {
   overflow: hidden;
 }
 
-/* 深色主题样式 */
-.dark-theme {
-  background-color: var(--color-background, #141414);
-  color: var(--color-text, #ffffff);
-}
-
-/* 全局样式重置 */
 * {
   box-sizing: border-box;
 }
@@ -54,6 +60,45 @@ html, body {
   overflow: hidden;
 }
 
+/* 加载屏幕 */
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-content {
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #1890ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-content p {
+  color: #666;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
 /* 自定义滚动条 */
 ::-webkit-scrollbar {
   width: 8px;
@@ -61,34 +106,28 @@ html, body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-background, #f5f5f5);
+  background: #f5f5f5;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border, #d9d9d9);
+  background: #d9d9d9;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-primary, #1890ff);
+  background: #1890ff;
 }
 
 /* 选择文本样式 */
 ::selection {
-  background-color: var(--color-primary, #1890ff);
+  background-color: #1890ff;
   color: white;
 }
 
 /* 焦点样式 */
 :focus-visible {
-  outline: 2px solid var(--color-primary, #1890ff);
+  outline: 2px solid #1890ff;
   outline-offset: 2px;
-}
-
-/* 禁用拖拽 */
-img, svg {
-  -webkit-user-drag: none;
-  user-select: none;
 }
 
 /* 过渡动画 */
@@ -100,18 +139,5 @@ img, svg {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-.slide-enter-active,
-.slide-leave-active {
-  transition: transform 0.3s ease;
-}
-
-.slide-enter-from {
-  transform: translateX(-100%);
-}
-
-.slide-leave-to {
-  transform: translateX(100%);
 }
 </style>
